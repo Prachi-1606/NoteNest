@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/base :: layout(~{::main})}"
+      xmlns:th="http://www.thymeleaf.org" lang="en">
+<head><title>NoteNest – Note Detail</title></head>
+<body>
+<main>
+
+    <!-- ── Breadcrumb ───────────────────────────────────────────────────── -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a th:href="@{/notes}" class="text-decoration-none">Notes</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a th:href="@{/notes/folder/{f}(f=${note.folder})}"
+                   class="text-decoration-none"
+                   th:text="${note.folder}">Folder</a>
+            </li>
+            <li class="breadcrumb-item active text-truncate" style="max-width:240px;"
+                th:text="${note.title}">Title</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+
+        <!-- ── Note content ─────────────────────────────────────────────── -->
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm">
+
+                <!-- Header -->
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex align-items-start justify-content-between gap-3">
+                        <div class="flex-grow-1">
+                            <h4 class="mb-1 fw-bold" th:text="${note.title}">Title</h4>
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <!-- Folder badge -->
+                                <a th:href="@{/notes/folder/{f}(f=${note.folder})}"
+                                   class="badge text-decoration-none"
+                                   style="background:#e8f4e8; color:#2d6a4f;"
+                                   th:text="${note.folder}">Folder</a>
+                                <!-- Pinned badge -->
+                                <span th:if="${note.pinned}"
+                                      class="badge"
+                                      style="background:#fff3cd; color:#856404;">
+                                    <i class="bi bi-pin-fill me-1"></i>Pinned
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Action buttons -->
+                        <div class="d-flex gap-2 flex-shrink-0">
+                            <!-- Pin toggle -->
+                            <form th:action="@{/notes/{id}/pin(id=${note.id})}" method="post">
+                                <button type="submit"
+                                        class="btn btn-sm"
+                                        th:classappend="${note.pinned} ? 'btn-warning' : 'btn-outline-secondary'"
+                                        th:title="${note.pinned} ? 'Unpin note' : 'Pin note'">
+                                    <i th:class="${note.pinned} ? 'bi bi-pin-fill' : 'bi bi-pin'"></i>
+                                    <span th:text="${note.pinned} ? 'Unpin' : 'Pin'">Pin</span>
+                                </button>
+                            </form>
+                            <!-- Edit -->
+                            <a th:href="@{/notes/{id}/edit(id=${note.id})}"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil me-1"></i>Edit
+                            </a>
+                            <!-- Delete -->
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal">
+                                <i class="bi bi-trash me-1"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Full content — white-space:pre-wrap preserves line breaks -->
+                <div class="card-body p-4">
+                    <div class="note-content"
+                         style="white-space: pre-wrap; font-size: 1rem; line-height: 1.75; color: #212529;"
+                         th:text="${note.content}">Content here</div>
+                </div>
+
+                <!-- Tags footer -->
+                <div class="card-footer bg-white border-top py-3"
+                     th:if="${not #lists.isEmpty(note.tagNames)}">
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <span class="text-muted small me-1">
+                            <i class="bi bi-tags me-1"></i>Tags:
+                        </span>
+                        <a th:each="tag : ${note.tagNames}"
+                           th:href="@{/notes/search(q=${tag})}"
+                           class="badge rounded-pill text-decoration-none"
+                           style="background:#eef2ff; color:#4361ee; font-size:.82rem;"
+                           th:text="${'#' + tag}">tag</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Metadata sidebar ─────────────────────────────────────────── -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title fw-bold mb-3">
+                        <i class="bi bi-info-circle me-1 text-primary"></i>Details
+                    </h6>
+
+                    <dl class="mb-0" style="font-size:.875rem;">
+                        <dt class="text-muted fw-normal">Created</dt>
+                        <dd class="mb-2" th:text="${#temporals.format(note.createdAt, 'MMM dd, yyyy HH:mm')}">
+                            date
+                        </dd>
+
+                        <dt class="text-muted fw-normal">Last updated</dt>
+                        <dd class="mb-2" th:text="${#temporals.format(note.updatedAt, 'MMM dd, yyyy HH:mm')}">
+                            date
+                        </dd>
+
+                        <dt class="text-muted fw-normal">Folder</dt>
+                        <dd class="mb-2">
+                            <a th:href="@{/notes/folder/{f}(f=${note.folder})}"
+                               class="text-decoration-none"
+                               th:text="${note.folder}">Folder</a>
+                        </dd>
+
+                        <dt class="text-muted fw-normal">Reading</dt>
+                        <dd class="mb-2">
+                            <i class="bi bi-file-text me-1 text-muted" style="font-size:.8rem;"></i>
+                            <span th:text="${wordCount}">0</span> words
+                            <span class="text-muted">·</span>
+                            <i class="bi bi-clock me-1 text-muted" style="font-size:.8rem;"></i>
+                            <span th:text="${readTime}">0</span> min read
+                        </dd>
+
+                        <dt class="text-muted fw-normal" th:if="${not #lists.isEmpty(note.tagNames)}">Tags</dt>
+                        <dd th:if="${not #lists.isEmpty(note.tagNames)}" class="d-flex flex-wrap gap-1">
+                            <a th:each="tag : ${note.tagNames}"
+                               th:href="@{/notes/search(q=${tag})}"
+                               class="badge rounded-pill text-decoration-none"
+                               style="background:#eef2ff; color:#4361ee; font-size:.75rem;"
+                               th:text="${'#' + tag}">tag</a>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Back link -->
+            <a th:href="@{/notes}" class="btn btn-outline-secondary w-100 mt-3">
+                <i class="bi bi-arrow-left me-1"></i>Back to Notes
+            </a>
+        </div>
+    </div>
+
+    <!-- ══ Delete confirmation modal ══════════════════════════════════════ -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold" id="deleteModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Delete Note
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-muted">
+                    Are you sure you want to delete
+                    <strong class="text-dark" th:text="${note.title}">this note</strong>?
+                    This action cannot be undone.
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <form th:action="@{/notes/{id}/delete(id=${note.id})}" method="post">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

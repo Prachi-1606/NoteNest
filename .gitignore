@@ -1,0 +1,52 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse / STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# VS Code
+.vscode/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# H2 / runtime data
+data/
+*.mv.db
+*.trace.db
+*.lock.db
+
+# Logs
+*.log
+logs/
+
+# Local config overrides
+application-local.properties
+application-secrets.properties
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

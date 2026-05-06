@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ── AJAX live-search dropdown results ─────────────────────────────────── -->
+<th:block th:fragment="searchResults">
+
+    <div th:if="${#lists.isEmpty(results)}"
+         class="px-3 py-3 text-muted small text-center">
+        <i class="bi bi-search me-1"></i>
+        No notes found for "<span th:text="${keyword}">keyword</span>"
+    </div>
+
+    <th:block th:unless="${#lists.isEmpty(results)}">
+        <a th:each="result : ${results}"
+           th:href="@{/notes/{id}(id=${result.id})}"
+           class="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none
+                  search-result-item border-bottom">
+            <div class="flex-grow-1 overflow-hidden">
+                <div class="fw-semibold text-dark text-truncate"
+                     style="font-size:.875rem;" th:text="${result.title}">Title</div>
+                <div class="text-muted text-truncate" style="font-size:.75rem;">
+                    <i class="bi bi-folder me-1"></i>
+                    <span th:text="${result.folder}">Folder</span>
+                    <span th:if="${not #lists.isEmpty(result.matchedTags)}" class="ms-2">
+                        <span th:each="tag,s : ${result.matchedTags}"
+                              style="color:#4361ee;"
+                              th:text="${(s.first ? '' : ', ') + '#' + tag}">tag</span>
+                    </span>
+                </div>
+            </div>
+            <i class="bi bi-arrow-right text-muted flex-shrink-0"
+               style="font-size:.7rem;"></i>
+        </a>
+
+        <a th:href="@{/notes/search(q=${keyword})}"
+           class="d-block px-3 py-2 text-primary small text-decoration-none text-center
+                  search-view-all">
+            View all results for "<span th:text="${keyword}"></span>" →
+        </a>
+    </th:block>
+
+</th:block>
+
+</body>
+</html>

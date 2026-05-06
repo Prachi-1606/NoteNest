@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/base :: layout(~{::main})}"
+      xmlns:th="http://www.thymeleaf.org" lang="en">
+<head><title>NoteNest – Note Form</title></head>
+<body>
+<main>
+
+    <!-- ── Draft restore banner ──────────────────────────────────────────── -->
+    <div id="draftBanner" class="alert alert-info alert-dismissible fade show d-none mb-3" role="alert">
+        <i class="bi bi-clock-history me-2"></i>
+        <strong>You have an unsaved draft.</strong> Restore it?
+        <button type="button" id="draftRestoreYes" class="btn btn-sm btn-info ms-2">Yes, restore</button>
+        <button type="button" id="draftRestoreNo"  class="btn btn-sm btn-outline-secondary ms-1">No, discard</button>
+    </div>
+
+    <!-- ── Breadcrumb ───────────────────────────────────────────────────── -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a th:href="@{/notes}" class="text-decoration-none">Notes</a>
+            </li>
+            <li class="breadcrumb-item active"
+                th:text="${isEdit} ? 'Edit Note' : 'New Note'">Form</li>
+        </ol>
+    </nav>
+
+    <!-- ── Form card ────────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-bold">
+                <i th:class="${isEdit} ? 'bi bi-pencil-square me-2 text-primary' : 'bi bi-plus-circle me-2 text-success'"></i>
+                <span th:text="${isEdit} ? 'Edit Note' : 'Create New Note'">Form</span>
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+            <form th:action="${isEdit} ? @{/notes/{id}/update(id=${noteId})} : @{/notes}"
+                  th:object="${noteForm}"
+                  method="post"
+                  novalidate
+                  data-note-form>
+
+                <input type="hidden" id="noteId" th:value="${noteId ?: 0}"/>
+
+                <!-- ── Title ── -->
+                <div class="mb-3">
+                    <label for="title" class="form-label fw-semibold">
+                        Title <span class="text-danger">*</span>
+                    </label>
+                    <input type="text"
+                           id="title"
+                           th:field="*{title}"
+                           class="form-control"
+                           th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''"
+                           placeholder="Give your note a title…"
+                           maxlength="200"
+                           autofocus/>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}"
+                         th:errors="*{title}">Title error</div>
+                </div>
+
+                <!-- ── Folder (with datalist autocomplete) ── -->
+                <div class="mb-3">
+                    <label for="folder" class="form-label fw-semibold">Folder</label>
+                    <input type="text"
+                           id="folder"
+                           th:field="*{folder}"
+                           class="form-control"
+                           list="folderOptions"
+                           placeholder="General"/>
+                    <datalist id="folderOptions">
+                        <option th:each="f : ${folders}" th:value="${f}"></option>
+                    </datalist>
+                    <div class="form-text text-muted">
+                        Pick an existing folder or type a new one.
+                    </div>
+                </div>
+
+                <!-- ── Content ── -->
+                <div class="mb-3">
+                    <label for="content" class="form-label fw-semibold">
+                        Content <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="content"
+                              th:field="*{content}"
+                              class="form-control font-monospace"
+                              th:classappend="${#fields.hasErrors('content')} ? 'is-invalid' : ''"
+                              rows="15"
+                              placeholder="Write your note here…"></textarea>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('content')}"
+                         th:errors="*{content}">Content error</div>
+                    <div class="d-flex justify-content-end mt-1">
+                        <small id="charCount" class="text-muted">0 characters</small>
+                    </div>
+                </div>
+
+                <!-- ── Tags ── -->
+                <div class="mb-3">
+                    <label for="tagsInput" class="form-label fw-semibold">
+                        Tags
+                        <span class="text-muted fw-normal small ms-1">(comma-separated)</span>
+                    </label>
+                    <div class="input-group">
+                        <input type="text"
+                               id="tagsInput"
+                               name="tagsInput"
+                               class="form-control"
+                               th:value="${tagsInput}"
+                               placeholder="e.g. spring-boot, java, backend"/>
+                        <button type="button" id="suggestTagsBtn"
+                                class="btn btn-outline-primary btn-sm px-3">
+                            <i class="bi bi-stars me-1"></i>Suggest Tags
+                        </button>
+                    </div>
+                    <span id="aiSuggestedBadge"
+                          class="badge bg-success-subtle text-success d-none mt-1"
+                          style="font-size:.75rem;">
+                        <i class="bi bi-check-circle me-1"></i>AI suggested
+                    </span>
+                    <!-- Existing tag suggestions -->
+                    <div class="mt-2 d-flex flex-wrap gap-1" th:if="${not #lists.isEmpty(allTags)}">
+                        <span class="text-muted small me-1">Existing:</span>
+                        <button type="button"
+                                th:each="tag : ${allTags}"
+                                class="btn btn-sm py-0 px-2 rounded-pill tag-suggest"
+                                style="background:#eef2ff; color:#4361ee; font-size:.75rem; border:none;"
+                                th:text="${tag}"
+                                th:data-tag="${tag}">tag</button>
+                    </div>
+                    <div class="form-text text-muted">
+                        Click a tag above to add it, or type your own.
+                    </div>
+                </div>
+
+                <!-- ── Pinned checkbox ── -->
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               id="isPinned"
+                               th:field="*{isPinned}"/>
+                        <label class="form-check-label" for="isPinned">
+                            <i class="bi bi-pin-fill text-warning me-1"></i>
+                            Pin this note to the top
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ── Actions ── -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-floppy me-1"></i>
+                        <span th:text="${isEdit} ? 'Update Note' : 'Save Note'">Save</span>
+                    </button>
+                    <a th:href="${isEdit} ? @{/notes/{id}(id=${noteId})} : @{/notes}"
+                       class="btn btn-outline-secondary px-4">
+                        <i class="bi bi-x-lg me-1"></i>Cancel
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Tag suggestion script ────────────────────────────────────────── -->
+    <script>
+        document.querySelectorAll('.tag-suggest').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const input = document.getElementById('tagsInput');
+                const tag = btn.dataset.tag;
+                const current = input.value.split(',').map(t => t.trim()).filter(t => t);
+                if (!current.includes(tag)) {
+                    input.value = [...current, tag].join(', ');
+                }
+            });
+        });
+    </script>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/base :: layout(~{::main})}"
+      xmlns:th="http://www.thymeleaf.org" lang="en">
+<head><title>NoteNest – Dashboard</title></head>
+<body>
+<main>
+
+    <!-- ── AI Summary (flash from /ai/summarize) ───────────────────────── -->
+    <div th:if="${aiSummary}" class="card border-0 shadow-sm mb-4"
+         style="border-left: 4px solid #0d6efd !important;">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="mb-0 fw-bold text-primary">
+                    <i class="bi bi-stars me-2"></i>AI Summary
+                    <span class="text-muted fw-normal" th:if="${summaryFolder}"
+                          th:text="'— ' + ${summaryFolder}"></span>
+                </h6>
+                <button type="button" class="btn-close btn-sm"
+                        onclick="this.closest('.card').remove()"></button>
+            </div>
+            <p class="mb-0 text-muted" style="white-space: pre-wrap; font-size: .92rem;"
+               th:text="${aiSummary}">Summary</p>
+        </div>
+    </div>
+
+    <!-- ── Page header ──────────────────────────────────────────────────── -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h4 class="mb-0 fw-bold" th:if="${currentFolder == null}">
+                <i class="bi bi-journal-text me-2 text-primary"></i>All Notes
+            </h4>
+            <h4 class="mb-0 fw-bold" th:if="${currentFolder != null}">
+                <i class="bi bi-folder-fill me-2 text-warning"></i>
+                <span th:text="${currentFolder}">Folder</span>
+            </h4>
+            <small class="text-muted"
+                   th:text="${#lists.size(notes)} + ' note' + (${#lists.size(notes)} != 1 ? 's' : '')">
+                0 notes
+            </small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <!-- Sort dropdown — only shown when there are notes -->
+            <select id="sortSelect" class="form-select form-select-sm"
+                    style="width:auto; font-size:.82rem;"
+                    th:if="${not #lists.isEmpty(notes)}">
+                <option value="updated">Last updated</option>
+                <option value="title">Title A–Z</option>
+            </select>
+            <!-- Summarize folder button — only when viewing a specific folder -->
+            <form th:if="${currentFolder != null}"
+                  th:action="@{/ai/summarize/{f}(f=${currentFolder})}"
+                  method="post">
+                <button type="submit" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-stars me-1"></i>Summarize
+                </button>
+            </form>
+            <a th:href="@{/notes/new}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i>New Note
+            </a>
+        </div>
+    </div>
+
+    <!-- ── Client-side filter bar ─────────────────────────────────────────── -->
+    <div id="filterBar" class="mb-3 d-flex align-items-center flex-wrap gap-2"
+         th:if="${not #lists.isEmpty(notes)}">
+        <span class="text-muted small me-1" style="font-size:.78rem;">Filter:</span>
+        <button class="btn btn-sm btn-primary filter-btn" data-filter="all">
+            <i class="bi bi-grid me-1"></i>All
+        </button>
+        <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="pinned">
+            <i class="bi bi-pin-fill text-warning me-1"></i>Pinned
+        </button>
+        <!-- Per-folder buttons are injected here by dashboard.js -->
+    </div>
+
+    <!-- ── Unified note grid (all notes, data-* attrs for JS) ─────────────── -->
+    <div id="noteGrid" class="row g-3" th:if="${not #lists.isEmpty(notes)}">
+        <div class="col-sm-6 col-lg-4 note-col"
+             th:each="note : ${notes}"
+             th:data-folder="${note.folder}"
+             th:data-pinned="${note.pinned}"
+             th:data-title="${note.title}"
+             th:data-updated="${note.updatedAt}">
+            <div th:replace="~{fragments/note-card :: noteCard(${note})}"></div>
+        </div>
+    </div>
+
+    <!-- ── Shown by JS when active filter matches nothing ─────────────────── -->
+    <div id="filterEmpty" class="text-center py-5 d-none">
+        <i class="bi bi-funnel display-3 text-muted opacity-50 mb-3"></i>
+        <p class="text-muted mb-0">No notes match this filter.</p>
+    </div>
+
+    <!-- ── Empty state (no notes at all) ──────────────────────────────────── -->
+    <div th:if="${#lists.isEmpty(notes)}"
+         class="d-flex flex-column align-items-center justify-content-center py-5 text-center">
+        <i class="bi bi-journal-plus display-1 text-muted opacity-50 mb-3"></i>
+        <h5 class="text-muted">No notes yet</h5>
+        <p class="text-muted small mb-3"
+           th:text="${currentFolder != null} ? 'No notes in folder \'' + ${currentFolder} + '\'' : 'Create your first note to get started.'">
+        </p>
+        <a th:href="@{/notes/new}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Create Note
+        </a>
+    </div>
+
+</main>
+</body>
+</html>

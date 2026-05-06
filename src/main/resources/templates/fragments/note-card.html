@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+
+<div th:fragment="noteCard(note)"
+     class="card h-100 note-card border-0 shadow-sm"
+     th:classappend="${note.pinned} ? 'border-start border-warning border-3' : ''">
+
+    <div class="card-body d-flex flex-column pb-2">
+
+        <!-- ── Header: title + pin toggle ── -->
+        <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+            <a th:href="@{/notes/{id}(id=${note.id})}"
+               class="card-title text-decoration-none text-dark stretched-link"
+               th:text="${note.title}">Note Title</a>
+
+            <!-- Pin toggle — sits above stretched-link via position:relative + z-index -->
+            <form th:action="@{/notes/{id}/pin(id=${note.id})}"
+                  method="post" class="flex-shrink-0" style="position:relative; z-index:2;">
+                <input type="hidden" name="_method" value="post"/>
+                <button type="submit" class="pin-btn" title="Toggle pin">
+                    <i th:class="${note.pinned} ? 'bi bi-pin-fill fs-5' : 'bi bi-pin fs-5'"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- ── Folder badge ── -->
+        <div class="mb-2">
+            <a th:href="@{/notes/folder/{f}(f=${note.folder})}"
+               class="badge text-decoration-none"
+               style="background:#e8f4e8; color:#2d6a4f; position:relative; z-index:2;"
+               th:text="${note.folder}">Folder</a>
+        </div>
+
+        <!-- ── Content preview ── -->
+        <p class="preview-text flex-grow-1 mb-2" th:text="${note.preview}">Preview…</p>
+
+        <!-- ── Tags ── -->
+        <div class="d-flex flex-wrap gap-1 mb-2" th:if="${not #lists.isEmpty(note.tagNames)}">
+            <span th:each="tag : ${note.tagNames}"
+                  class="badge rounded-pill"
+                  style="background:#eef2ff; color:#4361ee; font-size:.72rem;"
+                  th:text="${'#' + tag}">tag</span>
+        </div>
+    </div>
+
+    <!-- ── Footer: updated time ── -->
+    <div class="card-footer bg-transparent border-0 pt-0 pb-2">
+        <small class="text-muted">
+            <i class="bi bi-clock me-1"></i>
+            <span th:text="${#temporals.format(note.updatedAt, 'MMM dd, yyyy')}">date</span>
+        </small>
+    </div>
+</div>
+
+</body>
+</html>
