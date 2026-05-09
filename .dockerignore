@@ -1,0 +1,16 @@
+target/
+.idea/
+.vscode/
+*.iml
+data/
+*.mv.db
+*.trace.db
+*.lock.db
+*.log
+.git/
+.gitignore
+README.md
+docs/
+.env
+.env.local
+application-local.properties
