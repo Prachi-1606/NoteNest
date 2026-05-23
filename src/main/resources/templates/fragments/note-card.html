@@ -3,55 +3,92 @@
 <body>
 
 <div th:fragment="noteCard(note)"
-     class="card h-100 note-card border-0 shadow-sm"
-     th:classappend="${note.pinned} ? 'border-start border-warning border-3' : ''">
+     class="card h-100 note-card"
+     th:classappend="${note.pinned} ? 'note-card-pinned' : ''">
 
     <div class="card-body d-flex flex-column pb-2">
 
         <!-- ── Header: title + pin toggle ── -->
-        <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+        <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
             <a th:href="@{/notes/{id}(id=${note.id})}"
-               class="card-title text-decoration-none text-dark stretched-link"
+               class="card-title text-decoration-none stretched-link"
                th:text="${note.title}">Note Title</a>
 
-            <!-- Pin toggle — sits above stretched-link via position:relative + z-index -->
             <form th:action="@{/notes/{id}/pin(id=${note.id})}"
                   method="post" class="flex-shrink-0" style="position:relative; z-index:2;">
-                <input type="hidden" name="_method" value="post"/>
                 <button type="submit" class="pin-btn" title="Toggle pin">
-                    <i th:class="${note.pinned} ? 'bi bi-pin-fill fs-5' : 'bi bi-pin fs-5'"></i>
+                    <i th:class="${note.pinned} ? 'bi bi-pin-fill fs-6' : 'bi bi-pin fs-6'"></i>
                 </button>
             </form>
         </div>
 
-        <!-- ── Folder badge ── -->
-        <div class="mb-2">
-            <a th:href="@{/notes/folder/{f}(f=${note.folder})}"
-               class="badge text-decoration-none"
-               style="background:#e8f4e8; color:#2d6a4f; position:relative; z-index:2;"
-               th:text="${note.folder}">Folder</a>
-        </div>
-
         <!-- ── Content preview ── -->
-        <p class="preview-text flex-grow-1 mb-2" th:text="${note.preview}">Preview…</p>
+        <p class="preview-text flex-grow-1 mb-3" th:text="${note.preview}">Preview…</p>
 
-        <!-- ── Tags ── -->
-        <div class="d-flex flex-wrap gap-1 mb-2" th:if="${not #lists.isEmpty(note.tagNames)}">
+        <!-- ── Folder + Tags ── -->
+        <div class="d-flex flex-wrap align-items-center gap-1 mb-2">
+            <a th:href="@{/notes/folder/{f}(f=${note.folder})}"
+               class="folder-pill text-decoration-none"
+               style="position:relative; z-index:2;"
+               th:text="${note.folder}">Folder</a>
             <span th:each="tag : ${note.tagNames}"
-                  class="badge rounded-pill"
-                  style="background:#eef2ff; color:#4361ee; font-size:.72rem;"
+                  class="tag-pill"
                   th:text="${'#' + tag}">tag</span>
         </div>
     </div>
 
     <!-- ── Footer: updated time ── -->
-    <div class="card-footer bg-transparent border-0 pt-0 pb-2">
-        <small class="text-muted">
+    <div class="card-footer bg-transparent border-0 pt-0 pb-3">
+        <small class="text-meta">
             <i class="bi bi-clock me-1"></i>
             <span th:text="${#temporals.format(note.updatedAt, 'MMM dd, yyyy')}">date</span>
         </small>
     </div>
 </div>
+
+<style>
+    .note-card-pinned {
+        border-color: #fcd34d !important;
+        background: linear-gradient(180deg, #fffbeb 0%, #ffffff 35%);
+    }
+    .note-card .card-title {
+        color: var(--color-text);
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: -.01em;
+        line-height: 1.4;
+    }
+    .note-card:hover .card-title { color: var(--color-accent-text); }
+
+    .folder-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: .15rem .55rem;
+        font-size: .72rem;
+        font-weight: 500;
+        color: var(--color-text-muted);
+        background: var(--color-surface-alt);
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        transition: background .12s, color .12s;
+    }
+    .folder-pill:hover {
+        background: var(--color-accent-light);
+        color: var(--color-accent-text);
+        border-color: var(--color-accent-light);
+    }
+    .tag-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: .15rem .55rem;
+        font-size: .72rem;
+        font-weight: 500;
+        color: var(--color-accent-text);
+        background: var(--color-accent-light);
+        border-radius: 999px;
+    }
+    .text-meta { color: var(--color-text-subtle); font-size: .78rem; }
+</style>
 
 </body>
 </html>

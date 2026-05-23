@@ -40,9 +40,18 @@ A modern, AI-powered note-taking web application built with Spring Boot. Organiz
 - Client-side sort: last updated or title A–Z
 
 ### AI features (Google Gemini)
-- **Ask AI**: ask any question about your notes; the answer is grounded in the most relevant matches
-- **Summarize folder**: one-click summary of every note in a folder
-- **Suggest tags**: AI-powered tag suggestions based on note content (works for new notes too)
+
+Seven AI features, all reachable from the **AI Tools** page (`/ai`) or directly from the relevant note/form:
+
+1. **Q&A from Notes** — ask any question; the answer is grounded in the most relevant notes with source citations. `/ai/chat`
+2. **Note Summarizer** — 3–4 sentence summary of any note. Open a note → **Summarize with AI** button.
+3. **Title Suggester** — 3 creative title suggestions for the note you're drafting. New/edit form → **Suggest Titles** button.
+4. **Grammar Fixer** — improve grammar/clarity while preserving meaning, with side-by-side diff. Detail page → **Fix Grammar** button.
+5. **Meeting Formatter** — turn raw meeting notes into Summary / Decisions / Action Items / Next Steps sections. Detail page → **Format as Meeting Notes** button.
+6. **Flashcard Generator** — auto-generate 5 question/answer flashcards from a note for active recall, with a built-in study mode (keyboard shortcuts, Mark as Known, progress bar). Detail page → **Generate Flashcards** button.
+7. **Voice Notes** — dictate notes via the browser's built-in Web Speech API (no external API). Live transcription + automatic AI grammar cleanup on stop. Form page → **Voice Note** button. **Chrome/Edge only**; requires HTTPS or localhost (microphone access is browser-gated).
+
+All seven share an **hourly rate limit of 12 calls/JVM** (in-memory, configurable in `RateLimitService`) to stay within Gemini's free-tier quota.
 
 ### UX polish
 - Auto-save drafts to `localStorage` every 30 seconds — restore prompt if the browser closes
@@ -67,13 +76,34 @@ A modern, AI-powered note-taking web application built with Spring Boot. Organiz
 1. Open <https://aistudio.google.com/app/apikey> and sign in with a Google account.
 2. Click **Create API key** (you can use an existing Google Cloud project or let it create a new one).
 3. Copy the generated key — it starts with `AIza...`.
-4. Open `src/main/resources/application.properties` and replace the value of `gemini.api.key`:
+4. **Paste the key one of two ways:**
+
+   **Option A — environment variable (recommended; keeps the key out of your repo):**
+
+   ```powershell
+   # PowerShell, persistent across sessions
+   [System.Environment]::SetEnvironmentVariable("GEMINI_API_KEY", "AIzaSy_your_key", "User")
+   ```
+
+   Close and reopen your terminal/IDE so the new env var is picked up. The `application.properties` line `gemini.api.key=${GEMINI_API_KEY:}` reads it automatically.
+
+   **Option B — inline in `application.properties` (quick, but never commit a real key):**
+
+   Open `src/main/resources/application.properties` and change:
+
+   ```properties
+   gemini.api.key=${GEMINI_API_KEY:}
+   ```
+
+   to:
 
    ```properties
    gemini.api.key=AIzaSy_paste_your_key_here
    ```
 
-   The free tier on `gemini-1.5-flash` is generous (multiple requests per minute and thousands per day) — plenty for personal use.
+The free tier on `gemini-1.5-flash` is generous (multiple requests per minute and thousands per day) — plenty for personal use. NoteNest additionally enforces an in-app limit of **12 Gemini calls per hour** so you don't accidentally burn through your daily quota.
+
+> **Note about voice notes:** the dictation feature uses your browser's built-in Web Speech API — no extra setup needed. It only works in **Chrome or Edge** and requires either **HTTPS** (e.g. when deployed) or **`localhost`** for the browser to permit microphone access. Firefox/Safari fall back gracefully by hiding the mic button with a tooltip.
 
 ### 3. Build and run
 

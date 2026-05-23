@@ -8,42 +8,167 @@
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"/>
     <style>
-        body { background-color: #f8f9fa; }
+        /* ═══════════════════════════════════════════════════════════════════
+         * Modern minimalist palette
+         * ═══════════════════════════════════════════════════════════════════ */
+        :root {
+            --color-bg:          #fafafa;
+            --color-surface:     #ffffff;
+            --color-surface-alt: #f8fafc;
+            --color-border:      #e5e7eb;
+            --color-border-soft: #f1f5f9;
+            --color-text:        #0f172a;
+            --color-text-muted:  #64748b;
+            --color-text-subtle: #94a3b8;
 
-        /* ── Navbar ── */
-        .navbar-brand { font-weight: 700; font-size: 1.4rem; letter-spacing: -0.5px; }
-        .navbar-brand span { color: #ffd700; }
+            --color-accent:        #4f46e5;
+            --color-accent-hover:  #4338ca;
+            --color-accent-light:  #eef2ff;
+            --color-accent-text:   #4338ca;
 
-        /* ── Sidebar ── */
+            --color-success-light: #ecfdf5;
+            --color-success-text:  #047857;
+            --color-warn-light:    #fffbeb;
+            --color-warn-text:     #b45309;
+            --color-danger-light:  #fef2f2;
+            --color-danger-text:   #b91c1c;
+
+            --radius:    .75rem;
+            --radius-sm: .5rem;
+            --shadow:    0 1px 2px rgba(15, 23, 42, .04);
+            --shadow-md: 0 4px 12px rgba(15, 23, 42, .06);
+        }
+
+        /* Bootstrap variable overrides (so default classes pick up the new palette) */
+        :root {
+            --bs-body-bg:           var(--color-bg);
+            --bs-body-color:        var(--color-text);
+            --bs-body-font-family:  'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            --bs-primary:           var(--color-accent);
+            --bs-primary-rgb:       79, 70, 229;
+            --bs-border-color:      var(--color-border);
+            --bs-link-color:        var(--color-accent);
+            --bs-link-hover-color:  var(--color-accent-hover);
+            --bs-secondary-color:   var(--color-text-muted);
+        }
+
+        body {
+            font-family: var(--bs-body-font-family);
+            -webkit-font-smoothing: antialiased;
+            color: var(--color-text);
+            background: var(--color-bg);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+         * Navbar — clean white with bottom border
+         * ═══════════════════════════════════════════════════════════════════ */
+        .navbar.bg-dark { background-color: var(--color-surface) !important; }
+        .navbar.sticky-top {
+            border-bottom: 1px solid var(--color-border);
+            padding-top: .75rem;
+            padding-bottom: .75rem;
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, .85) !important;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: -0.02em;
+            color: var(--color-text) !important;
+        }
+        .navbar-brand span {
+            color: var(--color-accent);
+        }
+        .navbar .form-control {
+            background: var(--color-surface-alt) !important;
+            border: 1px solid var(--color-border) !important;
+            color: var(--color-text) !important;
+            font-size: .875rem;
+        }
+        .navbar .form-control::placeholder { color: var(--color-text-subtle); }
+        .navbar .form-control:focus {
+            background: var(--color-surface) !important;
+            border-color: var(--color-accent) !important;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, .12) !important;
+        }
+        .navbar .btn-outline-light {
+            color: var(--color-text-muted);
+            border-color: var(--color-border);
+            background: var(--color-surface-alt);
+        }
+        .navbar .btn-outline-light:hover {
+            background: var(--color-accent-light);
+            color: var(--color-accent-text);
+            border-color: var(--color-accent-light);
+        }
+        .navbar .btn-warning {
+            background: var(--color-text);
+            color: #fff;
+            border: none;
+            font-weight: 500;
+        }
+        .navbar .btn-warning:hover {
+            background: #1e293b;
+            color: #fff;
+        }
+        .navbar .btn-outline-light .bi-search,
+        .navbar input + .btn-outline-light { color: var(--color-text-muted); }
+
+        /* ═══════════════════════════════════════════════════════════════════
+         * Sidebar
+         * ═══════════════════════════════════════════════════════════════════ */
         .sidebar {
             position: sticky;
             top: 56px;
             height: calc(100vh - 56px);
             overflow-y: auto;
-            background: #fff;
-            border-right: 1px solid #e9ecef;
-            padding: 1.25rem 1rem;
+            background: var(--color-surface);
+            border-right: 1px solid var(--color-border);
+            padding: 1.5rem 1rem;
         }
         .sidebar .section-label {
-            font-size: 0.7rem;
-            font-weight: 700;
+            font-size: .68rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: .08em;
-            color: #6c757d;
+            letter-spacing: .1em;
+            color: var(--color-text-subtle);
             margin-bottom: .5rem;
+            padding-left: .65rem;
         }
         .sidebar .nav-link {
-            color: #495057;
-            padding: .3rem .6rem;
-            border-radius: .375rem;
-            font-size: .9rem;
+            color: var(--color-text-muted);
+            padding: .45rem .65rem;
+            border-radius: var(--radius-sm);
+            font-size: .875rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            transition: background .12s, color .12s;
         }
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active { background: #f0f4ff; color: #0d6efd; }
+        .sidebar .nav-link:hover {
+            background: var(--color-surface-alt);
+            color: var(--color-text);
+        }
+        .sidebar .nav-link.active {
+            background: var(--color-accent-light);
+            color: var(--color-accent-text);
+            font-weight: 600;
+        }
+        .sidebar .nav-link .badge { font-weight: 500; }
+        .sidebar .badge.bg-secondary {
+            background: var(--color-border-soft) !important;
+            color: var(--color-text-muted) !important;
+        }
+        .sidebar .badge.bg-light {
+            background: var(--color-border-soft) !important;
+            color: var(--color-text-muted) !important;
+        }
         .sidebar .pinned-title {
             font-size: .82rem;
             white-space: nowrap;
@@ -52,52 +177,207 @@
             max-width: 160px;
         }
 
-        /* ── Cards ── */
-        .note-card { transition: box-shadow .15s; cursor: pointer; }
-        .note-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); }
-        .note-card .card-title { font-size: 1rem; font-weight: 600; }
+        /* ═══════════════════════════════════════════════════════════════════
+         * Cards (general)
+         * ═══════════════════════════════════════════════════════════════════ */
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border) !important;
+            border-radius: var(--radius) !important;
+            box-shadow: none !important;
+        }
+        .card.shadow-sm { box-shadow: var(--shadow) !important; }
+        .card-header { background: var(--color-surface) !important; border-color: var(--color-border) !important; }
+        .card-footer { background: var(--color-surface) !important; border-color: var(--color-border) !important; }
+
+        /* ═══════════════════════════════════════════════════════════════════
+         * Note cards (dashboard tiles)
+         * ═══════════════════════════════════════════════════════════════════ */
+        .note-card {
+            cursor: pointer;
+            transition: border-color .15s, transform .15s, box-shadow .15s;
+        }
+        .note-card:hover {
+            border-color: var(--color-accent) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(79, 70, 229, .08) !important;
+        }
+        .note-card .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--color-text);
+            letter-spacing: -.01em;
+        }
         .note-card .preview-text {
             font-size: .85rem;
-            color: #6c757d;
+            color: var(--color-text-muted);
+            line-height: 1.55;
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
-        .pin-btn { border: none; background: transparent; padding: 0; line-height: 1; }
-        .pin-btn .bi-pin-fill  { color: #ffc107; }
-        .pin-btn .bi-pin       { color: #adb5bd; }
-        .pin-btn:hover .bi-pin { color: #ffc107; }
 
-        /* ── Ask AI FAB ── */
+        .pin-btn { border: none; background: transparent; padding: 0; line-height: 1; }
+        .pin-btn .bi-pin-fill  { color: #f59e0b; }
+        .pin-btn .bi-pin       { color: var(--color-text-subtle); }
+        .pin-btn:hover .bi-pin { color: #f59e0b; }
+
+        /* ═══════════════════════════════════════════════════════════════════
+         * Buttons
+         * ═══════════════════════════════════════════════════════════════════ */
+        .btn { font-weight: 500; border-radius: var(--radius-sm); transition: all .12s; }
+        .btn-primary {
+            background: var(--color-accent);
+            border-color: var(--color-accent);
+        }
+        .btn-primary:hover, .btn-primary:focus {
+            background: var(--color-accent-hover);
+            border-color: var(--color-accent-hover);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, .15);
+        }
+        .btn-outline-primary {
+            color: var(--color-accent-text);
+            border-color: var(--color-border);
+            background: var(--color-surface);
+        }
+        .btn-outline-primary:hover {
+            background: var(--color-accent-light);
+            color: var(--color-accent-text);
+            border-color: var(--color-accent-light);
+        }
+        .btn-outline-secondary {
+            color: var(--color-text-muted);
+            border-color: var(--color-border);
+            background: var(--color-surface);
+        }
+        .btn-outline-secondary:hover {
+            background: var(--color-surface-alt);
+            color: var(--color-text);
+            border-color: var(--color-border);
+        }
+        .btn-outline-success {
+            color: var(--color-success-text);
+            border-color: var(--color-border);
+            background: var(--color-surface);
+        }
+        .btn-outline-success:hover {
+            background: var(--color-success-light);
+            color: var(--color-success-text);
+            border-color: var(--color-success-light);
+        }
+        .btn-outline-info {
+            color: var(--color-accent-text);
+            border-color: var(--color-border);
+            background: var(--color-surface);
+        }
+        .btn-outline-info:hover {
+            background: var(--color-accent-light);
+            color: var(--color-accent-text);
+            border-color: var(--color-accent-light);
+        }
+        .btn-outline-danger {
+            color: var(--color-danger-text);
+            border-color: var(--color-border);
+            background: var(--color-surface);
+        }
+        .btn-outline-danger:hover {
+            background: var(--color-danger-light);
+            color: var(--color-danger-text);
+            border-color: var(--color-danger-light);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+         * Inputs
+         * ═══════════════════════════════════════════════════════════════════ */
+        .form-control, .form-select {
+            border-radius: var(--radius-sm);
+            border-color: var(--color-border);
+            font-size: .9rem;
+            transition: border-color .12s, box-shadow .12s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
+        }
+        .form-label { font-weight: 500; color: var(--color-text); font-size: .9rem; }
+
+        /* ═══════════════════════════════════════════════════════════════════
+         * Ask AI FAB
+         * ═══════════════════════════════════════════════════════════════════ */
         .fab-ai {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
             z-index: 1050;
-            border-radius: 2rem;
-            padding: .65rem 1.4rem;
-            font-weight: 600;
-            box-shadow: 0 4px 14px rgba(13,110,253,.35);
+            border-radius: 999px;
+            padding: .7rem 1.4rem;
+            font-weight: 500;
+            background: var(--color-text);
+            border: none;
+            color: #fff;
+            box-shadow: 0 6px 24px rgba(15, 23, 42, .25);
+            transition: transform .15s;
+        }
+        .fab-ai:hover {
+            background: #1e293b;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(15, 23, 42, .3);
         }
 
-        /* ── Main content ── */
-        .main-content { padding: 1.5rem; min-height: calc(100vh - 56px); }
-
-        /* ── Flash messages ── */
+        /* ═══════════════════════════════════════════════════════════════════
+         * Main content + flash
+         * ═══════════════════════════════════════════════════════════════════ */
+        .main-content { padding: 1.75rem 2rem; min-height: calc(100vh - 56px); }
         .flash-container { position: sticky; top: 56px; z-index: 100; }
+        .alert {
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+        }
+        .alert-success {
+            background: var(--color-success-light);
+            color: var(--color-success-text);
+            border-color: #d1fae5;
+        }
 
-        /* ── Live-search dropdown ── */
-        #searchDropdown { font-size: .875rem; }
-        .search-result-item:hover { background: #f0f4ff; }
-        .search-view-all { background: #f8f9fa; border-radius: 0 0 .375rem .375rem; }
-        .search-view-all:hover { background: #e8eeff; }
+        /* ═══════════════════════════════════════════════════════════════════
+         * Live-search dropdown
+         * ═══════════════════════════════════════════════════════════════════ */
+        #searchDropdown {
+            font-size: .875rem;
+            border-color: var(--color-border) !important;
+            border-radius: var(--radius-sm) !important;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, .1) !important;
+            margin-top: .25rem !important;
+        }
+        .search-result-item { color: var(--color-text); }
+        .search-result-item:hover { background: var(--color-surface-alt); }
+        .search-view-all {
+            background: var(--color-surface-alt);
+            border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+            color: var(--color-accent-text) !important;
+            font-weight: 500;
+        }
+        .search-view-all:hover { background: var(--color-accent-light); }
+
+        /* ═══════════════════════════════════════════════════════════════════
+         * Headings
+         * ═══════════════════════════════════════════════════════════════════ */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            letter-spacing: -.015em;
+            color: var(--color-text);
+        }
+
+        /* Tags / generic badges — switch from solid bright colors to subtle pills */
+        .badge.rounded-pill { font-weight: 500; }
     </style>
 </head>
 <body>
 
 <!-- ══ Navbar ══════════════════════════════════════════════════════════════ -->
-<nav class="navbar navbar-expand-md navbar-dark bg-dark sticky-top">
+<nav class="navbar navbar-expand-md sticky-top">
     <div class="container-fluid px-3">
 
         <a class="navbar-brand" th:href="@{/notes}">
@@ -108,7 +388,7 @@
         <form class="d-flex mx-auto" style="width:46%; position:relative;"
               th:action="@{/notes/search}" method="get" role="search">
             <div class="input-group w-100">
-                <input class="form-control form-control-sm bg-secondary border-0 text-white"
+                <input class="form-control form-control-sm"
                        type="search" name="q" id="navSearchInput"
                        placeholder="Search notes…"
                        th:value="${keyword}" autocomplete="off"/>
@@ -125,8 +405,13 @@
             </div>
         </form>
 
+        <!-- AI Tools -->
+        <a th:href="@{/ai}" class="btn btn-outline-light btn-sm fw-semibold ms-3">
+            <i class="bi bi-stars me-1"></i>AI Tools
+        </a>
+
         <!-- New Note -->
-        <a th:href="@{/notes/new}" class="btn btn-warning btn-sm fw-semibold ms-3">
+        <a th:href="@{/notes/new}" class="btn btn-warning btn-sm fw-semibold ms-2">
             <i class="bi bi-plus-lg me-1"></i>New Note
         </a>
     </div>
@@ -220,5 +505,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/notes.js" defer></script>
 <script src="/js/dashboard.js" defer></script>
+<script src="/js/voice-notes.js" defer></script>
 </body>
 </html>

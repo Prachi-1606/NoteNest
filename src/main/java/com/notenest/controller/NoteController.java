@@ -1,10 +1,13 @@
 package com.notenest.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notenest.dto.NoteRequestDTO;
 import com.notenest.dto.NoteResponseDTO;
 import com.notenest.repository.TagRepository;
 import com.notenest.service.NoteService;
 import com.notenest.service.SearchService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -13,6 +16,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +31,7 @@ public class NoteController {
     private final NoteService noteService;
     private final SearchService searchService;
     private final TagRepository tagRepository;
+    private final ObjectMapper objectMapper;
 
     // ── Sidebar data for every view in this controller ───────────────────────
 
@@ -43,10 +48,15 @@ public class NoteController {
     @GetMapping
     public String dashboard(Model model) {
         List<NoteResponseDTO> allNotes = noteService.getAllNotes();
+        Map<LocalDate, Long> activity = noteService.getActivityData();
+
         model.addAttribute("notes", allNotes);
         model.addAttribute("pinnedNotes", allNotes.stream().filter(NoteResponseDTO::isPinned).toList());
         model.addAttribute("folders", noteService.getAllFolders());
         model.addAttribute("allTags", allTagNames());
+        model.addAttribute("activityDataJson", toJson(activity));
+        model.addAttribute("currentStreak", noteService.calculateCurrentStreak(activity));
+        model.addAttribute("notesLast30Days", noteService.countNotesInLastDays(activity, 30));
         return "notes/dashboard";
     }
 
@@ -57,9 +67,11 @@ public class NoteController {
         NoteResponseDTO note = noteService.getNoteById(id);
         int wordCount = countWords(note.getContent());
         int readTime = Math.max(1, (int) Math.ceil(wordCount / 200.0));
+        int flashcardCount = noteService.getFlashcardsByNote(id).size();
         model.addAttribute("note", note);
         model.addAttribute("wordCount", wordCount);
         model.addAttribute("readTime", readTime);
+        model.addAttribute("flashcardCount", flashcardCount);
         return "notes/detail";
     }
 
@@ -165,11 +177,29 @@ public class NoteController {
     @PostMapping("/{id}/pin")
     public String togglePin(@PathVariable Long id,
                             @RequestHeader(value = "Referer", required = false) String referer,
+                            HttpServletRequest request,
                             RedirectAttributes redirectAttrs) {
         NoteResponseDTO updated = noteService.togglePin(id);
         redirectAttrs.addFlashAttribute("successMessage",
                 updated.isPinned() ? "Note pinned." : "Note unpinned.");
-        return referer != null ? "redirect:" + referer : "redirect:/notes/" + id;
+        // Only honor the Referer if it points back to OUR host — prevents an
+        // open-redirect where a malicious page can bounce users to attacker.com
+        if (isSameOriginReferer(referer, request)) {
+            return "redirect:" + referer;
+        }
+        return "redirect:/notes/" + id;
+    }
+
+    private boolean isSameOriginReferer(String referer, HttpServletRequest request) {
+        if (referer == null || referer.isBlank()) return false;
+        try {
+            java.net.URI refUri = java.net.URI.create(referer);
+            String refHost = refUri.getHost();
+            if (refHost == null) return false; // relative or malformed
+            return refHost.equalsIgnoreCase(request.getServerName());
+        } catch (IllegalArgumentException e) {
+            return false; // not a valid URI
+        }
     }
 
     // ── Search ────────────────────────────────────────────────────────────────
@@ -233,5 +263,16 @@ public class NoteController {
                 .map(t -> t.getName())
                 .sorted()
                 .toList();
+    }
+
+    private String toJson(Map<LocalDate, Long> activity) {
+        // Convert LocalDate keys to ISO strings so the JS layer can do `data['2026-05-19']`
+        Map<String, Long> stringKeyed = activity.entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey().toString(), Map.Entry::getValue));
+        try {
+            return objectMapper.writeValueAsString(stringKeyed);
+        } catch (JsonProcessingException e) {
+            return "{}";
+        }
     }
 }

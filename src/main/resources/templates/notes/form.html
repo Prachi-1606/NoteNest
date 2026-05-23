@@ -47,16 +47,27 @@
                     <label for="title" class="form-label fw-semibold">
                         Title <span class="text-danger">*</span>
                     </label>
-                    <input type="text"
-                           id="title"
-                           th:field="*{title}"
-                           class="form-control"
-                           th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''"
-                           placeholder="Give your note a title…"
-                           maxlength="200"
-                           autofocus/>
+                    <div class="input-group">
+                        <input type="text"
+                               id="title"
+                               th:field="*{title}"
+                               class="form-control"
+                               th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''"
+                               placeholder="Give your note a title…"
+                               maxlength="200"
+                               autofocus/>
+                        <button type="button" id="suggestTitlesBtn"
+                                class="btn btn-outline-primary btn-sm px-3">
+                            <i class="bi bi-stars me-1"></i>Suggest Titles
+                        </button>
+                    </div>
                     <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}"
                          th:errors="*{title}">Title error</div>
+
+                    <!-- AI-suggested title chips (populated by notes.js) -->
+                    <div id="titleSuggestions" class="d-none mt-2 d-flex flex-wrap gap-1 align-items-center">
+                        <span class="text-muted small me-1">Suggested:</span>
+                    </div>
                 </div>
 
                 <!-- ── Folder (with datalist autocomplete) ── -->
@@ -78,21 +89,60 @@
 
                 <!-- ── Content ── -->
                 <div class="mb-3">
-                    <label for="content" class="form-label fw-semibold">
-                        Content <span class="text-danger">*</span>
-                    </label>
+                    <div class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
+                        <label for="content" class="form-label fw-semibold mb-0">
+                            Content <span class="text-danger">*</span>
+                        </label>
+                        <button type="button" id="voiceNoteBtn"
+                                class="btn btn-sm btn-outline-secondary"
+                                title="Dictate using your microphone">
+                            <i class="bi bi-mic-fill me-1"></i>Voice Note
+                        </button>
+                    </div>
+
+                    <!-- "Listening…" banner (shown while recording) -->
+                    <div id="voiceListeningBanner"
+                         class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-2 d-none"
+                         style="font-size:.85rem;">
+                        <span class="recording-dot"></span>
+                        <strong>Listening…</strong> speak now
+                    </div>
+
                     <textarea id="content"
                               th:field="*{content}"
                               class="form-control font-monospace"
                               th:classappend="${#fields.hasErrors('content')} ? 'is-invalid' : ''"
                               rows="15"
-                              placeholder="Write your note here…"></textarea>
+                              placeholder="Write your note here, or click Voice Note to dictate…"></textarea>
                     <div class="invalid-feedback" th:if="${#fields.hasErrors('content')}"
                          th:errors="*{content}">Content error</div>
+
+                    <!-- Live interim transcript (shown while recording) -->
+                    <div id="voiceInterimPreview"
+                         class="text-muted small fst-italic mt-1 d-none"
+                         style="line-height:1.5; padding-left:.25rem;">
+                    </div>
+
                     <div class="d-flex justify-content-end mt-1">
                         <small id="charCount" class="text-muted">0 characters</small>
                     </div>
                 </div>
+
+                <!-- Inline CSS for voice-note pulsing button + recording dot -->
+                <style>
+                    @keyframes voice-pulse {
+                        0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, .7); }
+                        50%      { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+                    }
+                    .voice-pulse { animation: voice-pulse 1.4s ease-out infinite; }
+                    .recording-dot {
+                        display: inline-block;
+                        width: 10px; height: 10px;
+                        border-radius: 50%;
+                        background: #dc3545;
+                        animation: voice-pulse 1.4s ease-out infinite;
+                    }
+                </style>
 
                 <!-- ── Tags ── -->
                 <div class="mb-3">
@@ -175,6 +225,30 @@
             });
         });
     </script>
+
+    <!-- ── Voice-note AI cleanup toast (Bootstrap 5) ────────────────────── -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+        <div id="voiceCleanupToast" class="toast" role="alert" aria-live="polite">
+            <div class="toast-header" style="background:#eef2ff;">
+                <i class="bi bi-stars text-primary me-2"></i>
+                <strong class="me-auto">AI cleaned up your voice note</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <p class="mb-2 small text-muted">
+                    Grammar and clarity were improved. Apply the changes to your note?
+                </p>
+                <div class="d-flex gap-2">
+                    <button id="voiceCleanupAcceptBtn" type="button" class="btn btn-sm btn-success">
+                        <i class="bi bi-check-lg me-1"></i>Accept
+                    </button>
+                    <button id="voiceCleanupDismissBtn" type="button" class="btn btn-sm btn-outline-secondary">
+                        Keep Original
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </main>
 </body>

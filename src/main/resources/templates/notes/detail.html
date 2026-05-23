@@ -6,20 +6,47 @@
 <main>
 
     <!-- ── Breadcrumb ───────────────────────────────────────────────────── -->
-    <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="font-size:.85rem; --bs-breadcrumb-divider:'›';">
             <li class="breadcrumb-item">
-                <a th:href="@{/notes}" class="text-decoration-none">Notes</a>
+                <a th:href="@{/notes}" class="text-decoration-none text-meta">Notes</a>
             </li>
             <li class="breadcrumb-item">
                 <a th:href="@{/notes/folder/{f}(f=${note.folder})}"
-                   class="text-decoration-none"
+                   class="text-decoration-none text-meta"
                    th:text="${note.folder}">Folder</a>
             </li>
             <li class="breadcrumb-item active text-truncate" style="max-width:240px;"
                 th:text="${note.title}">Title</li>
         </ol>
     </nav>
+
+    <style>
+        .breadcrumb-item + .breadcrumb-item::before { color: var(--color-text-subtle); }
+        .breadcrumb-item.active { color: var(--color-text); font-weight: 500; }
+        .note-content {
+            white-space: pre-wrap;
+            font-size: 1rem;
+            line-height: 1.75;
+            color: var(--color-text);
+        }
+        .ai-summary-leftbar { border-left: 3px solid var(--color-accent) !important; }
+        .ai-diff-leftbar    { border-left: 3px solid var(--color-accent) !important; }
+        .metadata dt {
+            font-size: .7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--color-text-subtle);
+            margin-top: .85rem;
+        }
+        .metadata dt:first-of-type { margin-top: 0; }
+        .metadata dd {
+            font-size: .88rem;
+            color: var(--color-text);
+            margin-bottom: 0;
+        }
+    </style>
 
     <div class="row g-4">
 
@@ -48,7 +75,7 @@
                         </div>
 
                         <!-- Action buttons -->
-                        <div class="d-flex gap-2 flex-shrink-0">
+                        <div class="d-flex gap-2 flex-shrink-0 flex-wrap justify-content-end">
                             <!-- Pin toggle -->
                             <form th:action="@{/notes/{id}/pin(id=${note.id})}" method="post">
                                 <button type="submit"
@@ -59,6 +86,32 @@
                                     <span th:text="${note.pinned} ? 'Unpin' : 'Pin'">Pin</span>
                                 </button>
                             </form>
+                            <!-- Fix Grammar (AI) -->
+                            <button type="button" id="fixGrammarBtn"
+                                    class="btn btn-sm btn-outline-info"
+                                    th:data-note-id="${note.id}">
+                                <i class="bi bi-magic me-1"></i>Fix Grammar
+                            </button>
+                            <!-- Format as Meeting Notes (AI) -->
+                            <button type="button" id="formatMeetingBtn"
+                                    class="btn btn-sm btn-outline-info"
+                                    th:data-note-id="${note.id}">
+                                <i class="bi bi-file-earmark-text me-1"></i>Format as Meeting Notes
+                            </button>
+                            <!-- Flashcards: Generate (none yet) or View (existing) -->
+                            <form th:if="${flashcardCount == 0}"
+                                  th:action="@{/ai/flashcards/{id}(id=${note.id})}"
+                                  method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-collection me-1"></i>Generate Flashcards
+                                </button>
+                            </form>
+                            <a th:if="${flashcardCount > 0}"
+                               th:href="@{/ai/flashcards/{id}(id=${note.id})}"
+                               class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-collection me-1"></i>
+                                View Flashcards (<span th:text="${flashcardCount}">0</span>)
+                            </a>
                             <!-- Edit -->
                             <a th:href="@{/notes/{id}/edit(id=${note.id})}"
                                class="btn btn-sm btn-outline-primary">
@@ -80,6 +133,15 @@
                     <div class="note-content"
                          style="white-space: pre-wrap; font-size: 1rem; line-height: 1.75; color: #212529;"
                          th:text="${note.content}">Content here</div>
+
+                    <!-- ── Summarize with AI button ── -->
+                    <div class="mt-4 pt-3 border-top">
+                        <button type="button" id="summarizeNoteBtn"
+                                class="btn btn-sm btn-outline-primary"
+                                th:data-note-id="${note.id}">
+                            <i class="bi bi-stars me-1"></i>Summarize with AI
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Tags footer -->
@@ -97,6 +159,115 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ── AI Summary card (hidden until 'Summarize with AI' is clicked) ── -->
+            <div id="aiSummaryCard" class="card border-0 shadow-sm mt-3 d-none"
+                 style="border-left: 3px solid #4f46e5 !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="mb-0 fw-bold text-primary">
+                            <i class="bi bi-stars me-2"></i>AI Summary
+                        </h6>
+                        <button type="button" id="dismissSummaryBtn"
+                                class="btn-close btn-sm" aria-label="Dismiss"></button>
+                    </div>
+                    <p id="aiSummaryText" class="mb-0 text-muted"
+                       style="white-space: pre-wrap; font-size: .92rem; line-height: 1.65;">
+                        Summary loading…
+                    </p>
+                </div>
+            </div>
+
+            <!-- ── Summary loading spinner ── -->
+            <div id="aiSummaryLoading" class="card border-0 shadow-sm mt-3 d-none">
+                <div class="card-body d-flex align-items-center gap-2 text-muted">
+                    <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                    <span style="font-size:.9rem;">Generating AI summary…</span>
+                </div>
+            </div>
+
+            <!-- ── Shared loading card for Fix Grammar / Format Meeting ── -->
+            <div id="aiActionLoading" class="card border-0 shadow-sm mt-3 d-none">
+                <div class="card-body d-flex align-items-center gap-2 text-muted">
+                    <span class="spinner-border spinner-border-sm text-info" role="status"></span>
+                    <span id="aiActionLoadingText" style="font-size:.9rem;">Working with AI…</span>
+                </div>
+            </div>
+
+            <!-- ── Grammar-fix diff view (hidden until Fix Grammar is clicked) ── -->
+            <div id="diffView" class="card border-0 shadow-sm mt-3 d-none"
+                 style="min-height: 360px; border-left: 3px solid #4f46e5 !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                        <h6 class="mb-0 fw-bold text-info">
+                            <i class="bi bi-magic me-2"></i>Improved Content
+                        </h6>
+                        <div class="d-flex gap-2">
+                            <button type="button" id="acceptChangesBtn" class="btn btn-sm btn-success">
+                                <i class="bi bi-check-lg me-1"></i>Accept Changes
+                            </button>
+                            <button type="button" id="dismissDiffBtn" class="btn btn-sm btn-outline-secondary">
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="text-muted small fw-semibold mb-1">
+                                <i class="bi bi-file-text me-1"></i>Original
+                            </div>
+                            <div id="diffOriginal"
+                                 class="border rounded p-3 bg-light"
+                                 style="white-space: pre-wrap; min-height: 240px; max-height: 480px; overflow-y: auto; font-size: .9rem; line-height: 1.6;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-info small fw-semibold mb-1">
+                                <i class="bi bi-stars me-1"></i>Improved
+                            </div>
+                            <div id="diffImproved"
+                                 class="border rounded p-3 bg-white"
+                                 style="white-space: pre-wrap; min-height: 240px; max-height: 480px; overflow-y: auto; font-size: .9rem; line-height: 1.6;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Meeting-format preview (hidden until Format as Meeting is clicked) ── -->
+            <div id="meetingView" class="card border-0 shadow-sm mt-3 d-none"
+                 style="min-height: 360px; border-left: 3px solid #4f46e5 !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                        <h6 class="mb-0 fw-bold text-info">
+                            <i class="bi bi-file-earmark-text me-2"></i>Formatted Meeting Notes
+                        </h6>
+                        <div class="d-flex gap-2">
+                            <button type="button" id="saveAsNoteBtn" class="btn btn-sm btn-success">
+                                <i class="bi bi-plus-lg me-1"></i>Save as New Note
+                            </button>
+                            <button type="button" id="dismissMeetingBtn" class="btn btn-sm btn-outline-secondary">
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                    <div id="meetingRendered"
+                         class="border rounded p-3 bg-white"
+                         style="min-height: 240px; max-height: 600px; overflow-y: auto; line-height: 1.7;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Hidden form used by 'Accept Changes' to POST to /notes/{id}/update ── -->
+            <form id="noteUpdateForm"
+                  th:action="@{/notes/{id}/update(id=${note.id})}"
+                  method="post" class="d-none">
+                <input type="hidden" name="title"     th:value="${note.title}"/>
+                <input type="hidden" name="content"   id="updateContentField" th:value="${note.content}"/>
+                <input type="hidden" name="folder"    th:value="${note.folder}"/>
+                <input type="hidden" name="isPinned"  th:value="${note.pinned}"/>
+                <input type="hidden" name="tagsInput" th:value="${#strings.listJoin(note.tagNames, ', ')}"/>
+            </form>
         </div>
 
         <!-- ── Metadata sidebar ─────────────────────────────────────────── -->
@@ -107,8 +278,8 @@
                         <i class="bi bi-info-circle me-1 text-primary"></i>Details
                     </h6>
 
-                    <dl class="mb-0" style="font-size:.875rem;">
-                        <dt class="text-muted fw-normal">Created</dt>
+                    <dl class="metadata mb-0">
+                        <dt>Created</dt>
                         <dd class="mb-2" th:text="${#temporals.format(note.createdAt, 'MMM dd, yyyy HH:mm')}">
                             date
                         </dd>
@@ -152,6 +323,177 @@
             </a>
         </div>
     </div>
+
+    <!-- ── Summarize-with-AI script ──────────────────────────────────────── -->
+    <script>
+        (function () {
+            const btn       = document.getElementById('summarizeNoteBtn');
+            const card      = document.getElementById('aiSummaryCard');
+            const loading   = document.getElementById('aiSummaryLoading');
+            const textEl    = document.getElementById('aiSummaryText');
+            const dismiss   = document.getElementById('dismissSummaryBtn');
+            if (!btn) return;
+
+            btn.addEventListener('click', async () => {
+                const noteId = btn.dataset.noteId;
+                btn.disabled = true;
+                card.classList.add('d-none');
+                loading.classList.remove('d-none');
+
+                try {
+                    const res = await fetch('/ai/summarize/' + noteId, { method: 'POST' });
+                    const summary = await res.text();
+                    textEl.textContent = summary || 'No summary returned.';
+                    card.classList.remove('d-none');
+                } catch (err) {
+                    console.error('Summarize error:', err);
+                    textEl.textContent = 'Failed to generate summary. Please try again.';
+                    card.classList.remove('d-none');
+                } finally {
+                    loading.classList.add('d-none');
+                    btn.disabled = false;
+                }
+            });
+
+            if (dismiss) {
+                dismiss.addEventListener('click', () => card.classList.add('d-none'));
+            }
+        })();
+    </script>
+
+    <!-- ── Fix Grammar + Format as Meeting scripts ───────────────────────── -->
+    <script>
+        (function () {
+            const loading      = document.getElementById('aiActionLoading');
+            const loadingText  = document.getElementById('aiActionLoadingText');
+            const diffView     = document.getElementById('diffView');
+            const diffOriginal = document.getElementById('diffOriginal');
+            const diffImproved = document.getElementById('diffImproved');
+            const meetingView  = document.getElementById('meetingView');
+            const meetingRendered = document.getElementById('meetingRendered');
+            const noteContentEl = document.querySelector('.note-content');
+
+            // ── Fix Grammar ────────────────────────────────────────────────
+            const fixBtn      = document.getElementById('fixGrammarBtn');
+            const acceptBtn   = document.getElementById('acceptChangesBtn');
+            const dismissDiff = document.getElementById('dismissDiffBtn');
+            const updateForm  = document.getElementById('noteUpdateForm');
+            const contentField = document.getElementById('updateContentField');
+
+            if (fixBtn) {
+                fixBtn.addEventListener('click', async () => {
+                    const noteId = fixBtn.dataset.noteId;
+                    hideAll();
+                    showLoading('Improving grammar & clarity…');
+                    fixBtn.disabled = true;
+                    try {
+                        const res = await fetch('/ai/fix-grammar/' + noteId, { method: 'POST' });
+                        const improved = await res.text();
+                        diffOriginal.textContent = noteContentEl ? noteContentEl.textContent : '';
+                        diffImproved.textContent = improved || '(no response)';
+                        diffView.classList.remove('d-none');
+                        diffView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } catch (err) {
+                        console.error('Fix grammar error:', err);
+                        alert('Failed to fix grammar. Please try again.');
+                    } finally {
+                        loading.classList.add('d-none');
+                        fixBtn.disabled = false;
+                    }
+                });
+            }
+
+            if (acceptBtn) {
+                acceptBtn.addEventListener('click', () => {
+                    if (!updateForm || !contentField || !diffImproved) return;
+                    contentField.value = diffImproved.textContent;
+                    updateForm.submit();
+                });
+            }
+
+            if (dismissDiff) {
+                dismissDiff.addEventListener('click', () => diffView.classList.add('d-none'));
+            }
+
+            // ── Format as Meeting Notes ────────────────────────────────────
+            const meetingBtn     = document.getElementById('formatMeetingBtn');
+            const saveAsNoteBtn  = document.getElementById('saveAsNoteBtn');
+            const dismissMeeting = document.getElementById('dismissMeetingBtn');
+            let lastMeetingMarkdown = '';
+
+            if (meetingBtn) {
+                meetingBtn.addEventListener('click', async () => {
+                    const noteId = meetingBtn.dataset.noteId;
+                    hideAll();
+                    showLoading('Formatting as meeting notes…');
+                    meetingBtn.disabled = true;
+                    try {
+                        const res = await fetch('/ai/format-meeting/' + noteId, { method: 'POST' });
+                        const markdown = await res.text();
+                        lastMeetingMarkdown = markdown || '';
+                        meetingRendered.innerHTML = markdownToHTML(lastMeetingMarkdown);
+                        meetingView.classList.remove('d-none');
+                        meetingView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } catch (err) {
+                        console.error('Format meeting error:', err);
+                        alert('Failed to format meeting notes. Please try again.');
+                    } finally {
+                        loading.classList.add('d-none');
+                        meetingBtn.disabled = false;
+                    }
+                });
+            }
+
+            if (saveAsNoteBtn) {
+                saveAsNoteBtn.addEventListener('click', () => {
+                    if (!lastMeetingMarkdown) return;
+                    // Pass the raw markdown to /notes/new via sessionStorage
+                    sessionStorage.setItem('notenest-prefill-content', lastMeetingMarkdown);
+                    sessionStorage.setItem('notenest-prefill-title',   'Meeting Notes');
+                    window.location.href = '/notes/new';
+                });
+            }
+
+            if (dismissMeeting) {
+                dismissMeeting.addEventListener('click', () => meetingView.classList.add('d-none'));
+            }
+
+            // ── helpers ────────────────────────────────────────────────────
+            function hideAll() {
+                diffView.classList.add('d-none');
+                meetingView.classList.add('d-none');
+            }
+
+            function showLoading(text) {
+                loadingText.textContent = text;
+                loading.classList.remove('d-none');
+            }
+
+            // Minimal markdown → HTML (## → h3, plain lines → with <br>)
+            function markdownToHTML(md) {
+                const escape = s => s
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                return md.split('\n').map(line => {
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith('## ')) {
+                        return '<h5 class="fw-bold mt-3 mb-2 text-info">' +
+                                escape(trimmed.slice(3)) + '</h5>';
+                    }
+                    if (trimmed.startsWith('### ')) {
+                        return '<h6 class="fw-bold mt-2 mb-1">' +
+                                escape(trimmed.slice(4)) + '</h6>';
+                    }
+                    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                        return '<div class="ms-3">• ' + escape(trimmed.slice(2)) + '</div>';
+                    }
+                    if (!trimmed) return '<br>';
+                    return '<div>' + escape(trimmed) + '</div>';
+                }).join('');
+            }
+        })();
+    </script>
 
     <!-- ══ Delete confirmation modal ══════════════════════════════════════ -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">

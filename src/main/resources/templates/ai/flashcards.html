@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/base :: layout(~{::main})}"
+      xmlns:th="http://www.thymeleaf.org" lang="en">
+<head><title>NoteNest – Flashcards</title></head>
+<body>
+<main>
+
+    <style>
+        /* ── Card animation ── */
+        .flashcard {
+            transition: opacity .2s ease;
+        }
+        .answer-wrap {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .45s ease-out;
+        }
+        .answer-wrap.open {
+            max-height: 800px;
+        }
+
+        /* ── Side list ── */
+        .card-list-item {
+            cursor: pointer;
+            padding: .55rem .9rem;
+            border-bottom: 1px solid #eee;
+            transition: background .15s;
+            font-size: .85rem;
+            line-height: 1.4;
+        }
+        .card-list-item:hover { background: #f8f9fa; }
+        .card-list-item.active {
+            background: #e8eeff;
+            border-left: 3px solid #0d6efd;
+            padding-left: calc(.9rem - 3px);
+        }
+        .card-list-item.known .card-list-text {
+            text-decoration: line-through;
+            color: #adb5bd;
+        }
+        .card-list-item.known::after {
+            content: '✓';
+            float: right;
+            color: #198754;
+            font-weight: 700;
+        }
+
+        /* ── Progress bar ── */
+        .progress-thin { height: 6px; background: #e9ecef; border-radius: 4px; }
+        .progress-thin > .bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width .3s ease;
+        }
+    </style>
+
+    <!-- ── Heading ─────────────────────────────────────────────────────────── -->
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <h4 class="mb-0 fw-bold">
+            <i class="bi bi-collection me-2 text-primary"></i>
+            Flashcards <span class="text-muted fw-normal">—</span>
+            <span th:text="${noteTitle}">Note Title</span>
+        </h4>
+        <div class="d-flex gap-2">
+            <a th:href="@{/notes/{id}(id=${noteId})}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Note
+            </a>
+            <form th:action="@{/ai/flashcards/{id}(id=${noteId})}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Regenerate
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Empty state ─────────────────────────────────────────────────────── -->
+    <div th:if="${#lists.isEmpty(flashcards)}"
+         class="text-center py-5">
+        <i class="bi bi-collection display-3 text-muted opacity-50 mb-3 d-block"></i>
+        <h5 class="text-muted">No flashcards yet</h5>
+        <p class="text-muted small mb-3">
+            Generation may have failed or returned no usable cards. Try regenerating.
+        </p>
+        <form th:action="@{/ai/flashcards/{id}(id=${noteId})}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-stars me-1"></i>Generate Flashcards
+            </button>
+        </form>
+    </div>
+
+    <!-- ── Study area ──────────────────────────────────────────────────────── -->
+    <div class="row g-4" th:if="${not #lists.isEmpty(flashcards)}">
+
+        <!-- Main card column -->
+        <div class="col-lg-9">
+
+            <!-- Progress indicator -->
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <small class="text-muted fw-semibold">
+                    Card <span id="cardCurrent">1</span> of
+                    <span id="cardTotal" th:text="${#lists.size(flashcards)}">5</span>
+                </small>
+                <small class="text-muted">
+                    <i class="bi bi-check2-circle me-1 text-success"></i>
+                    <span id="knownCount">0</span> known
+                </small>
+            </div>
+            <div class="progress-thin mb-3">
+                <div id="progressBar" class="bar" style="width: 0%;"></div>
+            </div>
+
+            <!-- Flashcards (render all; JS shows one at a time) -->
+            <div id="flashcards">
+                <div th:each="fc, status : ${flashcards}"
+                     class="flashcard card border-0 shadow-sm"
+                     th:classappend="${status.first} ? '' : 'd-none'"
+                     th:data-index="${status.index}"
+                     style="min-height: 280px;">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="text-primary small mb-2 fw-bold text-uppercase"
+                             style="letter-spacing: .08em; font-size: .72rem;">
+                            <i class="bi bi-question-circle me-1"></i>Question
+                        </div>
+                        <h5 class="fw-bold mb-3" th:text="${fc.question}">Question?</h5>
+
+                        <div class="answer-wrap">
+                            <div class="border-top pt-3 mt-3">
+                                <div class="text-success small mb-2 fw-bold text-uppercase"
+                                     style="letter-spacing: .08em; font-size: .72rem;">
+                                    <i class="bi bi-lightbulb me-1"></i>Answer
+                                </div>
+                                <p class="mb-0" style="white-space: pre-wrap; line-height: 1.65;"
+                                   th:text="${fc.answer}">Answer text</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-auto pt-3 d-flex gap-2 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-outline-primary show-answer-btn">
+                                <i class="bi bi-eye me-1"></i>Show Answer
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success mark-known-btn">
+                                <i class="bi bi-check2 me-1"></i>Mark as Known
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="d-flex justify-content-between mt-3">
+                <button type="button" id="prevBtn" class="btn btn-outline-secondary" disabled>
+                    <i class="bi bi-arrow-left me-1"></i>Previous
+                </button>
+                <button type="button" id="nextBtn" class="btn btn-primary">
+                    Next<i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Side list -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-2 px-3 d-flex align-items-center justify-content-between">
+                    <span class="fw-semibold" style="font-size:.9rem;">
+                        <i class="bi bi-list-check me-1 text-primary"></i>All Cards
+                    </span>
+                </div>
+                <div id="cardList">
+                    <div th:each="fc, status : ${flashcards}"
+                         class="card-list-item"
+                         th:data-index="${status.index}">
+                        <span class="text-muted me-1 fw-semibold"
+                              th:text="${status.count} + '.'">1.</span>
+                        <span class="card-list-text" th:text="${fc.question}">Question</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Study mode script (no JS libraries) ─────────────────────────────── -->
+    <script>
+        (function () {
+            const cards = document.querySelectorAll('.flashcard');
+            const listItems = document.querySelectorAll('.card-list-item');
+            const total = cards.length;
+            if (!total) return;
+
+            const prevBtn      = document.getElementById('prevBtn');
+            const nextBtn      = document.getElementById('nextBtn');
+            const currentEl    = document.getElementById('cardCurrent');
+            const progressBar  = document.getElementById('progressBar');
+            const knownCountEl = document.getElementById('knownCount');
+
+            let idx = 0;
+
+            function show(i) {
+                cards.forEach((c, k) => {
+                    c.classList.toggle('d-none', k !== i);
+                    // Reset answer visibility when moving to a new card
+                    if (k !== i) {
+                        const wrap = c.querySelector('.answer-wrap');
+                        const btn  = c.querySelector('.show-answer-btn');
+                        if (wrap) wrap.classList.remove('open');
+                        if (btn)  btn.innerHTML = '<i class="bi bi-eye me-1"></i>Show Answer';
+                    }
+                });
+                listItems.forEach((li, k) => li.classList.toggle('active', k === i));
+                currentEl.textContent = i + 1;
+                progressBar.style.width = ((i + 1) / total * 100) + '%';
+                prevBtn.disabled = i === 0;
+                nextBtn.disabled = i === total - 1;
+            }
+
+            prevBtn.addEventListener('click', () => { if (idx > 0)         show(--idx); });
+            nextBtn.addEventListener('click', () => { if (idx < total - 1) show(++idx); });
+
+            // Keyboard: ← → to navigate, space/enter to flip answer
+            document.addEventListener('keydown', e => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                if (e.key === 'ArrowLeft'  && idx > 0)         { show(--idx); e.preventDefault(); }
+                if (e.key === 'ArrowRight' && idx < total - 1) { show(++idx); e.preventDefault(); }
+                if (e.key === ' ') {
+                    const visibleBtn = cards[idx].querySelector('.show-answer-btn');
+                    if (visibleBtn) { visibleBtn.click(); e.preventDefault(); }
+                }
+            });
+
+            // Per-card: show-answer + mark-known
+            cards.forEach((card, cardIdx) => {
+                const wrap     = card.querySelector('.answer-wrap');
+                const showBtn  = card.querySelector('.show-answer-btn');
+                const knownBtn = card.querySelector('.mark-known-btn');
+
+                showBtn.addEventListener('click', () => {
+                    const open = wrap.classList.toggle('open');
+                    showBtn.innerHTML = open
+                        ? '<i class="bi bi-eye-slash me-1"></i>Hide Answer'
+                        : '<i class="bi bi-eye me-1"></i>Show Answer';
+                });
+
+                knownBtn.addEventListener('click', () => {
+                    const li = listItems[cardIdx];
+                    if (!li) return;
+                    const wasKnown = li.classList.toggle('known');
+                    knownBtn.innerHTML = wasKnown
+                        ? '<i class="bi bi-arrow-counterclockwise me-1"></i>Mark as Unknown'
+                        : '<i class="bi bi-check2 me-1"></i>Mark as Known';
+                    knownBtn.classList.toggle('btn-outline-success', !wasKnown);
+                    knownBtn.classList.toggle('btn-success',         wasKnown);
+                    updateKnownCount();
+                });
+            });
+
+            // Click side list to jump
+            listItems.forEach(li => {
+                li.addEventListener('click', () => {
+                    idx = parseInt(li.dataset.index, 10);
+                    show(idx);
+                });
+            });
+
+            function updateKnownCount() {
+                const n = document.querySelectorAll('.card-list-item.known').length;
+                knownCountEl.textContent = n;
+            }
+
+            show(0);
+        })();
+    </script>
+
+</main>
+</body>
+</html>

@@ -33,6 +33,13 @@ public class AiController {
         model.addAttribute("folderCounts", noteService.getFolderNoteCounts());
     }
 
+    // ── GET /ai — AI Tools landing ────────────────────────────────────────────
+
+    @GetMapping({"", "/"})
+    public String aiTools(Model model) {
+        return "ai/tools";
+    }
+
     // ── GET /ai/chat ──────────────────────────────────────────────────────────
 
     @GetMapping("/chat")
@@ -66,6 +73,68 @@ public class AiController {
         redirectAttrs.addFlashAttribute("aiSummary", summary);
         redirectAttrs.addFlashAttribute("summaryFolder", folder);
         return "redirect:/notes/folder/" + folder;
+    }
+
+    // ── POST /ai/summarize/{noteId} (AJAX, numeric path) ──────────────────────
+    // Regex constraint disambiguates from /summarize/{folder} above:
+    //  - /ai/summarize/123  → this handler (Long noteId)
+    //  - /ai/summarize/Work → the folder handler above (String folder)
+
+    @PostMapping("/summarize/{noteId:[0-9]+}")
+    @ResponseBody
+    public String summarizeNote(@PathVariable Long noteId) {
+        String content = noteService.getNoteContentById(noteId);
+        return geminiService.summarizeNote(content);
+    }
+
+    // ── POST /ai/suggest-titles (AJAX) ────────────────────────────────────────
+
+    @PostMapping("/suggest-titles")
+    @ResponseBody
+    public List<String> suggestTitles(@RequestParam("content") String content) {
+        return geminiService.suggestTitles(content);
+    }
+
+    // ── POST /ai/fix-grammar/{noteId} (AJAX) ──────────────────────────────────
+    // If `content` is supplied as a form param, use it directly (supports new
+    // unsaved notes — pass noteId=0). Otherwise load content from the stored note.
+
+    @PostMapping("/fix-grammar/{noteId}")
+    @ResponseBody
+    public String fixGrammar(@PathVariable Long noteId,
+                             @RequestParam(required = false) String content) {
+        if (content != null && !content.isBlank()) {
+            return geminiService.fixGrammarAndClarity(content);
+        }
+        return noteService.fixNoteContent(noteId);
+    }
+
+    // ── POST /ai/format-meeting/{noteId} (AJAX) ───────────────────────────────
+
+    @PostMapping("/format-meeting/{noteId}")
+    @ResponseBody
+    public String formatMeeting(@PathVariable Long noteId) {
+        return noteService.formatAsMeeting(noteId);
+    }
+
+    // ── POST /ai/flashcards/{noteId} — generate (and replace) flashcards ──────
+
+    @PostMapping("/flashcards/{noteId}")
+    public String generateFlashcards(@PathVariable Long noteId, RedirectAttributes redirectAttrs) {
+        noteService.generateAndSaveFlashcards(noteId);
+        redirectAttrs.addFlashAttribute("successMessage", "Flashcards generated.");
+        return "redirect:/ai/flashcards/" + noteId;
+    }
+
+    // ── GET /ai/flashcards/{noteId} — study view ──────────────────────────────
+
+    @GetMapping("/flashcards/{noteId}")
+    public String viewFlashcards(@PathVariable Long noteId, Model model) {
+        var note = noteService.getNoteById(noteId); // throws ResourceNotFoundException if missing
+        model.addAttribute("flashcards", noteService.getFlashcardsByNote(noteId));
+        model.addAttribute("noteId", noteId);
+        model.addAttribute("noteTitle", note.getTitle());
+        return "ai/flashcards";
     }
 
     // ── POST /ai/suggest-tags/{noteId} (AJAX) ────────────────────────────────

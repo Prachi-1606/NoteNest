@@ -1,11 +1,36 @@
 'use strict';
 
 document.addEventListener('DOMContentLoaded', () => {
+    initPrefillFromSession();   // must run before initAutoSaveDraft so its "empty form" check sees the prefilled values
     initCharCounter();
     initAutoSaveDraft();
     initTagSuggestion();
+    initTitleSuggestion();
     initConfirmDelete();
 });
+
+// ── 0. One-shot prefill from sessionStorage (e.g. "Save as New Note" from detail) ──
+function initPrefillFromSession() {
+    const titleEl   = document.getElementById('title');
+    const contentEl = document.getElementById('content');
+    if (!titleEl || !contentEl) return;
+
+    const prefillTitle   = sessionStorage.getItem('notenest-prefill-title');
+    const prefillContent = sessionStorage.getItem('notenest-prefill-content');
+    if (!prefillTitle && !prefillContent) return;
+
+    // Only prefill on a fresh new-note form (don't overwrite existing edit values)
+    if (titleEl.value.trim() || contentEl.value.trim()) return;
+
+    if (prefillTitle)   titleEl.value   = prefillTitle;
+    if (prefillContent) contentEl.value = prefillContent;
+
+    sessionStorage.removeItem('notenest-prefill-title');
+    sessionStorage.removeItem('notenest-prefill-content');
+
+    // Refresh the char counter
+    contentEl.dispatchEvent(new Event('input'));
+}
 
 // ── 1. Character counter ───────────────────────────────────────────────────
 function initCharCounter() {
@@ -108,7 +133,69 @@ function initTagSuggestion() {
     });
 }
 
-// ── 4. Confirm delete ──────────────────────────────────────────────────────
+// ── 4. AI title suggestion ─────────────────────────────────────────────────
+function initTitleSuggestion() {
+    const btn       = document.getElementById('suggestTitlesBtn');
+    const titleEl   = document.getElementById('title');
+    const contentEl = document.getElementById('content');
+    const chipBar   = document.getElementById('titleSuggestions');
+    if (!btn || !titleEl || !contentEl || !chipBar) return;
+
+    btn.addEventListener('click', async () => {
+        const content = contentEl.value.trim();
+        if (!content) {
+            const orig = btn.innerHTML;
+            btn.textContent = 'Write some content first';
+            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Suggesting…';
+        chipBar.classList.add('d-none');
+
+        try {
+            const body = new URLSearchParams();
+            body.append('content', content);
+            const res = await fetch('/ai/suggest-titles', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body
+            });
+            if (!res.ok) throw new Error('Request failed: ' + res.status);
+
+            const titles = await res.json();
+            renderChips(chipBar, titleEl, titles);
+        } catch (err) {
+            console.error('Title suggestion error:', err);
+        } finally {
+            btn.disabled  = false;
+            btn.innerHTML = '<i class="bi bi-stars me-1"></i>Suggest Titles';
+        }
+    });
+}
+
+function renderChips(chipBar, titleEl, titles) {
+    // Clear any existing chips but keep the "Suggested:" label (first child)
+    while (chipBar.children.length > 1) chipBar.removeChild(chipBar.lastChild);
+
+    titles.forEach(title => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'btn btn-sm py-0 px-2 rounded-pill';
+        chip.style.cssText = 'background:#eef2ff; color:#4361ee; font-size:.78rem; border:none;';
+        chip.textContent = title;
+        chip.addEventListener('click', () => {
+            titleEl.value = title;
+            chipBar.classList.add('d-none');
+            titleEl.focus();
+        });
+        chipBar.appendChild(chip);
+    });
+    chipBar.classList.remove('d-none');
+}
+
+// ── 5. Confirm delete ──────────────────────────────────────────────────────
 function initConfirmDelete() {
     // Skip forms inside Bootstrap modals — they already show a confirmation dialog
     document.querySelectorAll('form[action*="/delete"]').forEach(form => {

@@ -19,6 +19,14 @@ public class GlobalExceptionHandler {
         return "error/404";
     }
 
+    @ExceptionHandler(GeminiApiException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public String handleGeminiApiError(GeminiApiException ex, Model model) {
+        log.error("Gemini API error: {}", ex.getMessage());
+        model.addAttribute("errorMessage", ex.getMessage());
+        return "error/ai-error";
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String handleGenericError(Exception ex, Model model) {

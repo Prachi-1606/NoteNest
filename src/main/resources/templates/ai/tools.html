@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/base :: layout(~{::main})}"
+      xmlns:th="http://www.thymeleaf.org" lang="en">
+<head><title>NoteNest – AI Tools</title></head>
+<body>
+<main>
+
+    <style>
+        .ai-tool-card {
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            background: var(--color-surface);
+            transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+            height: 100%;
+        }
+        .ai-tool-card:hover {
+            border-color: var(--color-accent);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(79, 70, 229, .08);
+        }
+        .ai-tool-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            background: var(--color-accent-light);
+            color: var(--color-accent-text);
+            flex-shrink: 0;
+        }
+        .ai-tool-card a { color: inherit; text-decoration: none; }
+        .ai-tool-link {
+            display: inline-flex;
+            align-items: center;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--color-accent-text);
+        }
+        .ai-tool-link i { transition: transform .2s; }
+        .ai-tool-card:hover .ai-tool-link i { transform: translateX(3px); }
+        .ai-tool-card h6 {
+            font-size: .98rem;
+            color: var(--color-text);
+        }
+        .ai-tool-card p {
+            color: var(--color-text-muted);
+            line-height: 1.55;
+        }
+    </style>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="text-meta" style="font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; font-weight:600;">
+            AI Tools
+        </div>
+        <h4 class="mb-1 mt-1 fw-bold">Smart features powered by Gemini</h4>
+        <p class="text-meta mb-0" style="font-size:.9rem;">
+            Use AI to summarize, fix grammar, generate flashcards, and more.
+        </p>
+    </div>
+
+    <!-- Tool cards -->
+    <div class="row g-3">
+
+        <!-- Q&A from Notes -->
+        <div class="col-md-6 col-lg-4">
+            <a th:href="@{/ai/chat}" class="d-block h-100">
+                <div class="ai-tool-card card shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="ai-tool-icon mb-3">
+                            <i class="bi bi-chat-dots-fill"></i>
+                        </div>
+                        <h6 class="fw-bold mb-2">Q&amp;A from Notes</h6>
+                        <p class="text-muted small mb-3">
+                            Ask questions in plain English and get answers grounded in your notes,
+                            with source citations.
+                        </p>
+                        <span class="ai-tool-link">
+                            Open chat <i class="bi bi-arrow-right ms-1"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Note Summarizer -->
+        <div class="col-md-6 col-lg-4">
+            <a th:href="@{/notes}" class="d-block h-100">
+                <div class="ai-tool-card card shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="ai-tool-icon mb-3">
+                            <i class="bi bi-card-text"></i>
+                        </div>
+                        <h6 class="fw-bold mb-2">Note Summarizer</h6>
+                        <p class="text-muted small mb-3">
+                            Condense any note into 3–4 sentences capturing the key points.
+                            Click <em>Summarize with AI</em> on any note's detail page.
+                        </p>
+                        <span class="ai-tool-link">
+                            Open a note <i class="bi bi-arrow-right ms-1"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Title Suggester -->
+        <div class="col-md-6 col-lg-4">
+            <a th:href="@{/notes/new}" class="d-block h-100">
+                <div class="ai-tool-card card shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="ai-tool-icon mb-3">
+                            <i class="bi bi-lightbulb-fill"></i>
+                        </div>
+                        <h6 class="fw-bold mb-2">Title Suggester</h6>
+                        <p class="text-muted small mb-3">
+                            Stuck on a title? Get 3 creative, relevant suggestions based on your
+                            note's content. Click <em>Suggest Titles</em> on the new-note form.
+                        </p>
+                        <span class="ai-tool-link">
+                            New note <i class="bi bi-arrow-right ms-1"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Grammar Fixer -->
+        <div class="col-md-6 col-lg-4">
+            <a th:href="@{/notes}" class="d-block h-100">
+                <div class="ai-tool-card card shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="ai-tool-icon mb-3">
+                            <i class="bi bi-magic"></i>
+                        </div>
+                        <h6 class="fw-bold mb-2">Grammar Fixer</h6>
+                        <p class="text-muted small mb-3">
+                            Improve grammar, clarity, and readability while preserving meaning and
+                            tone. See a side-by-side diff before accepting.
+                        </p>
+                        <span class="ai-tool-link">
+                            Open a note <i class="bi bi-arrow-right ms-1"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Meeting Formatter -->
+        <div class="col-md-6 col-lg-4">
+            <a th:href="@{/notes}" class="d-block h-100">
+                <div class="ai-tool-card card shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="ai-tool-icon mb-3">
+                            <i class="bi bi-file-earmark-text-fill"></i>
+                        </div>
+                        <h6 class="fw-bold mb-2">Meeting Formatter</h6>
+                        <p class="text-muted small mb-3">
+                            Turn raw meeting notes into a clean Summary / Decisions / Action Items /
+                            Next Steps structure with markdown.
+                        </p>
+                        <span class="ai-tool-link">
+                            Open a note <i class="bi bi-arrow-right ms-1"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Flashcard Generator -->
+        <div class="col-md-6 col-lg-4">
+            <a th:href="@{/notes}" class="d-block h-100">
+                <div class="ai-tool-card card shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="ai-tool-icon mb-3">
+                            <i class="bi bi-collection-fill"></i>
+                        </div>
+                        <h6 class="fw-bold mb-2">Flashcard Generator</h6>
+                        <p class="text-muted small mb-3">
+                            Auto-generate 5 question/answer flashcards from any note for active
+                            recall. Includes a built-in study mode.
+                        </p>
+                        <span class="ai-tool-link">
+                            Pick a note <i class="bi bi-arrow-right ms-1"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Voice Notes -->
+        <div class="col-md-6 col-lg-4">
+            <a th:href="@{/notes/new}" class="d-block h-100">
+                <div class="ai-tool-card card shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="ai-tool-icon mb-3">
+                            <i class="bi bi-mic-fill"></i>
+                        </div>
+                        <h6 class="fw-bold mb-2">Voice Notes</h6>
+                        <p class="text-muted small mb-3">
+                            Dictate notes using your microphone — live transcription, then AI
+                            grammar cleanup. <span class="text-muted">Chrome/Edge only.</span>
+                        </p>
+                        <span class="ai-tool-link">
+                            Start dictating <i class="bi bi-arrow-right ms-1"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Footer note -->
+    <div class="mt-4 p-3 bg-light rounded small text-muted">
+        <i class="bi bi-info-circle me-1"></i>
+        AI features share an hourly rate limit (12 calls/hour on the free tier) to stay within
+        Gemini's free quota. If you hit the limit, wait a few minutes and try again.
+    </div>
+
+</main>
+</body>
+</html>
